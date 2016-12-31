@@ -2,4 +2,4 @@
   :depends-on ()
   :components ((:module "lsp-client"
                 :serial t
-                :components ((:file "protocol.lisp")))))
+                :components ((:file "protocol")))))

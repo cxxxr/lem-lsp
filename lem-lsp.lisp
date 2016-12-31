@@ -7,8 +7,7 @@
 
 (defstruct client
   language-id
-  jsonrpc-client
-  )
+  jsonrpc-client)
 
 (defstruct workspace
   language-id

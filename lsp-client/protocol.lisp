@@ -2,15 +2,22 @@
   (:use #:cl))
 (in-package #:lsp-protocol)
 
-(defun optionalp (sym)
-  (let ((str (string sym)))
-    (when (char= #\? (char str (1- (length str))))
-      (values
-       (intern (subseq str 0 (1- (length str)))
-               (symbol-package sym))))))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun optionalp (sym)
+    (let ((str (string sym)))
+      (when (char= #\? (char str (1- (length str))))
+        (values
+         (intern (subseq str 0 (1- (length str)))
+                 (symbol-package sym))))))
+
+  (defun yb (sym)
+    (intern (format nil "_~A" sym))))
 
 (defmacro define-interface (class-name (&optional parent) &rest slots)
-  `(defclass ,class-name ,parent
+  `(defclass ,(yb class-name)
+       ,(if (null parent)
+            '()
+            `(,(yb parent)))
      ,(mapcar (lambda (slot)
                 (destructuring-bind (slot-name type) slot
                   (let ((sym (optionalp slot-name)))
