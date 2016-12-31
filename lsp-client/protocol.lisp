@@ -1,5 +1,6 @@
 (cl:defpackage #:lsp-protocol
-  (:use #:cl))
+  (:use #:cl)
+  (:export #:to-hashtable))
 (in-package #:lsp-protocol)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -17,7 +18,7 @@
          (intern (subseq str 0 (1- (length str)))
                  (symbol-package sym)))))))
 
-(defmacro define-interface (class-name (&optional parent) &rest slots)
+(defmacro define-interface (class-name parent &rest slots)
   `(defclass ,class-name ,parent
      ,(mapcar (lambda (slot)
                 (destructuring-bind (slot-name type) slot
@@ -34,6 +35,14 @@
                           :reader ,(symb slot-name '-of)
                           :type ,type)))))
               slots)))
+
+(defun to-hashtable (x)
+  (let ((table (make-hash-table :test 'equal)))
+    (loop :for slot :in (c2mop:class-slots (class-of x))
+          :for slot-name := (c2mop:slot-definition-name slot)
+          :do (setf (gethash (string slot-name) table)
+                    (slot-value x slot-name)))
+    table))
 
 (define-interface |Position| ()
   (line integer)
