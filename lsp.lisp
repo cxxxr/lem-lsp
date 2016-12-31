@@ -21,7 +21,8 @@
   (setf *client*
         (make-client :jsonrpc-client (jsonrpc:client-connect :host "127.0.0.1" :port 4389)
                      :language-id "go"))
-  (add-hook 'find-file-hook 'text-document-did-open))
+  (add-hook 'find-file-hook 'text-document-did-open)
+  (add-hook 'after-save-hook 'text-document-did-save))
 
 (defun find-workspace (buffer)
   (dolist (workspace *workspaces*)
@@ -121,6 +122,13 @@
                          (make-request "textDocument/didOpen"
                                        (params "textDocument"
                                                (make-text-document-item buffer workspace)))))))
+
+(defun text-document-did-save (buffer)
+  (when (buffer-workspace buffer)
+    (send-notification *client*
+                       (make-request "textDocument/didSave"
+                                     (params "textDocument"
+                                             (make-text-document-identifier buffer))))))
 
 (defun make-text-document-identifier (buffer)
   (params "uri" (format nil "file://~A" (buffer-filename buffer))))
