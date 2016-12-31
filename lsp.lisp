@@ -22,7 +22,8 @@
         (make-client :jsonrpc-client (jsonrpc:client-connect :host "127.0.0.1" :port 4389)
                      :language-id "go"))
   (add-hook 'find-file-hook 'text-document-did-open)
-  (add-hook 'after-save-hook 'text-document-did-save))
+  (add-hook 'after-save-hook 'text-document-did-save)
+  (add-hook 'kill-buffer-hook 'text-document-did-close))
 
 (defun find-workspace (buffer)
   (dolist (workspace *workspaces*)
@@ -129,6 +130,23 @@
                        (make-request "textDocument/didSave"
                                      (params "textDocument"
                                              (make-text-document-identifier buffer))))))
+
+(defun text-document-did-close (buffer)
+  (let ((workspace (buffer-workspace buffer)))
+    (when workspace
+      (let ((file-versions (workspace-file-versions workspace)))
+        (remhash (buffer-filename buffer) file-versions)
+        (when (zerop (hash-table-count file-versions))
+          (send-notification *client* (make-request "shutdown" (params))))
+        (send-notification *client*
+                           (make-request "textDocument/didClose"
+                                         (params "textDocument" (make-version-text-document-identifier
+                                                                 buffer
+                                                                 workspace))))))))
+
+(defun make-version-text-document-identifier (buffer workspace)
+  (params "uri" (format nil "file://~A" (buffer-filename buffer))
+          "version" (file-version buffer workspace)))
 
 (defun make-text-document-identifier (buffer)
   (params "uri" (format nil "file://~A" (buffer-filename buffer))))
