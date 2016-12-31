@@ -1,5 +1,4 @@
 (asdf:defsystem lem-lsp
   :depends-on (:lem :jsonrpc :alexandria :lsp-client)
   :serial t
-  :components ((:file "lsp")
-               ))
+  :components ((:file "lem-lsp")))
