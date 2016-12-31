@@ -1,6 +1,6 @@
-(defpackage :lsp
-  (:use :cl :lem))
-(in-package :lsp)
+(defpackage #:lem-lsp
+  (:use #:cl #:lem #:lsp-protocol))
+(in-package #:lem-lsp)
 
 (defvar *workspaces* nil)
 (defvar *client*)
