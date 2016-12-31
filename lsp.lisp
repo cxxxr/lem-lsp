@@ -122,16 +122,16 @@
                                        (params "textDocument"
                                                (make-text-document-item buffer workspace)))))))
 
-(defun text-document-identifier (buffer)
+(defun make-text-document-identifier (buffer)
   (params "uri" (format nil "file://~A" (buffer-filename buffer))))
 
-(defun _position (point)
+(defun make-position (point)
   (params "line" (1- (point-linum point))
           "character" (point-charpos point)))
 
-(defun text-document-position-params (point)
-  (params "textDocument" (text-document-identifier (point-buffer point))
-          "position" (_position point)))
+(defun make-text-document-position-params (point)
+  (params "textDocument" (make-text-document-identifier (point-buffer point))
+          "position" (make-position point)))
 
 (define-key *global-keymap* "M-." 'lsp-find-definitions)
 (define-command lsp-find-definitions () ()
@@ -139,7 +139,7 @@
     (when workspace
       (let ((defs (send-request *client*
                                 (make-request "textDocument/definition"
-                                              (text-document-position-params (current-point)))))
+                                              (make-text-document-position-params (current-point)))))
             (elements '()))
         (dolist (def defs)
           (let* ((uri (gethash "uri" def))
