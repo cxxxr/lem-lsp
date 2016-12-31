@@ -139,18 +139,41 @@
     (when workspace
       (let ((defs (send-request *client*
                                 (make-request "textDocument/definition"
-                                              (text-document-position-params (current-point))))))
-        (when (consp defs)
-          (dolist (def defs)
-            (let* ((uri (gethash "uri" def))
-                   (range (gethash "range" def))
-                   (start (gethash "start" range))
-                   (line-number (gethash "line" start))
-                   (character (gethash "character" start)))
-              (ppcre:register-groups-bind (filename)
-                  ("^file://(.*)" uri)
-                (find-file filename)
-                (line-offset (buffer-start (current-point))
-                             line-number
-                             character)
-                (return)))))))))
+                                              (text-document-position-params (current-point)))))
+            (elements '()))
+        (dolist (def defs)
+          (let* ((uri (gethash "uri" def))
+                 (range (gethash "range" def))
+                 (start (gethash "start" range))
+                 (line-number (gethash "line" start))
+                 (character (gethash "character" start)))
+            (ppcre:register-groups-bind (filename)
+                ("^file://(.*)" uri)
+              (let ((filename filename)
+                    (line-number line-number)
+                    (character character))
+                (push (list def
+                            (lambda ()
+                              (find-file filename)
+                              (line-offset (buffer-start (current-point))
+                                           line-number
+                                           character))
+                            uri
+                            line-number
+                            character)
+                      elements)))))
+        (cond
+          ((= 1 (length elements))
+           (funcall (second (first elements))))
+          ((not (null elements))
+           (lem.sourcelist:with-sourcelist (sourcelist "*lsp-Definitions*")
+             (loop :for (def jump-fn uri line-number character) :in elements
+                   :do (lem.sourcelist:append-sourcelist
+                        sourcelist
+                        (lambda (point)
+                          (insert-string point uri :attribute lem.grep::*attribute-1*)
+                          (insert-string point ":")
+                          (insert-string point (princ-to-string line-number) :attribute lem.grep::*attribute-2*)
+                          (insert-string point ":")
+                          (insert-string point (princ-to-string character) :attribute lem.grep::*attribute-2*))
+                        jump-fn)))))))))
