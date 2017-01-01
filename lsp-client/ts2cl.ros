@@ -43,7 +43,8 @@ exec ros -Q -- $0 "$@"
   (let ((*tokens* (scan-text text)))
     (catch 'fail
       (loop
-        (pprint (=top))
+        (let ((*print-case* :downcase))
+          (pprint (=top)))
         (unless *tokens*
           (return))))))
 
