@@ -89,9 +89,10 @@
     (let ((response
            (send-request *client*
                          (make-request "initialize"
-                                       (params "processId" (sb-posix:getpid)
-                                               "rootPath" root
-                                               "capabilities" (params))))))
+                                       (make-instance '|InitializeParams|
+                                                      :processId (sb-posix:getpid)
+                                                      :rootPath root
+                                                      :capabilities nil)))))
       (setf (workspace-server-capabilities workspace)
             (gethash "capabilities" response)))))
 
@@ -99,11 +100,15 @@
   (let ((file-versions (workspace-file-versions workspace)))
     (gethash (buffer-filename buffer) file-versions)))
 
+(defun uri (buffer)
+  (format nil "file://~A" (buffer-filename buffer)))
+
 (defun make-text-document-item (buffer workspace)
-  (params "uri" (format nil "file://~A" (buffer-filename buffer))
-          "languageId" (workspace-language-id workspace)
-          "version" (file-version buffer workspace)
-          "text" (points-to-string (buffers-start buffer) (buffers-end buffer))))
+  (make-instance '|TextDocumentItem|
+                 :uri (uri buffer)
+                 :languageId (workspace-language-id workspace)
+                 :version (file-version buffer workspace)
+                 :text (points-to-string (buffers-start buffer) (buffers-end buffer))))
 
 (defun lsp-buffer-p (buffer)
   (eq (buffer-major-mode buffer) 'lem.go-mode::go-mode))
@@ -136,27 +141,31 @@
       (let ((file-versions (workspace-file-versions workspace)))
         (remhash (buffer-filename buffer) file-versions)
         (when (zerop (hash-table-count file-versions))
-          (send-notification *client* (make-request "shutdown" (params))))
+          (send-notification *client* (make-request "shutdown" nil)))
         (send-notification *client*
                            (make-request "textDocument/didClose"
-                                         (params "textDocument" (make-version-text-document-identifier
-                                                                 buffer
-                                                                 workspace))))))))
-
-(defun make-version-text-document-identifier (buffer workspace)
-  (params "uri" (format nil "file://~A" (buffer-filename buffer))
-          "version" (file-version buffer workspace)))
+                                         (params "textDocument"
+                                                 (make-version-text-document-identifier buffer
+                                                                                        workspace))))))))
 
 (defun make-text-document-identifier (buffer)
-  (params "uri" (format nil "file://~A" (buffer-filename buffer))))
+  (make-instance '|TextDocumentIdentifier|
+                 :uri (uri buffer)))
+
+(defun make-version-text-document-identifier (buffer workspace)
+  (make-instance '|TextDocumentIdentifier|
+                 :uri (uri buffer)
+                 :version (file-version buffer workspace)))
 
 (defun make-position (point)
-  (params "line" (1- (point-linum point))
-          "character" (point-charpos point)))
+  (make-instance '|Position|
+                 :line (1- (point-linum point))
+                 :character (point-charpos point)))
 
 (defun make-text-document-position-params (point)
-  (params "textDocument" (make-text-document-identifier (point-buffer point))
-          "position" (make-position point)))
+  (make-instance '|TextDocumentPositionParams|
+                 :textDocument (make-text-document-identifier (point-buffer point))
+                 :position (make-position point)))
 
 (define-key *global-keymap* "M-." 'lsp-find-definitions)
 (define-command lsp-find-definitions () ()

@@ -16,6 +16,7 @@ exec ros -Q -- $0 "$@"
 (in-package :ros.script.ts2cl.3692253918)
 
 (defvar *tokens*)
+(defvar *debug* nil)
 
 (declaim (ftype function
                 parse
@@ -23,6 +24,9 @@ exec ros -Q -- $0 "$@"
                 next
                 maybe
                 match
+                =top
+                =namespace
+                =namespace-body
                 =interface
                 =interface-extends
                 =var-type-list
@@ -30,6 +34,7 @@ exec ros -Q -- $0 "$@"
                 =typespec
                 =name
                 =type
+                =value
                 ts-to-lisp-type
                 scan-text
                 scan-ahead))
@@ -38,7 +43,7 @@ exec ros -Q -- $0 "$@"
   (let ((*tokens* (scan-text text)))
     (catch 'fail
       (loop
-        (pprint (=interface))
+        (pprint (=top))
         (unless *tokens*
           (return))))))
 
@@ -57,9 +62,49 @@ exec ros -Q -- $0 "$@"
 (defun match (name)
   (if (equal name (lookahead))
       (next)
-      (throw 'fail (list *tokens*
-                         (with-output-to-string (stream)
-                           (uiop:print-backtrace :stream stream))))))
+      (throw 'fail
+        (progn
+          (setf *debug*
+                (list *tokens*
+                      (with-output-to-string (stream)
+                        (uiop:print-backtrace :stream stream))))
+          nil))))
+
+(defun =top ()
+  (flet ((f (fn)
+           (let ((tokens *tokens*))
+             (or (catch 'fail (funcall fn))
+                 (progn
+                   (setf *tokens* tokens)
+                   nil)))))
+    (or (f '=namespace)
+        (f '=interface))))
+
+(defun =namespace ()
+  (maybe "export")
+  (match "namespace")
+  (let ((name (=name))
+        (definitions (=namespace-body)))
+    (declare (ignore name))
+    `(progn
+       ,@(loop :for (var value) :in definitions
+               :collect `(defparameter ,var ,value)))))
+
+(defun =namespace-body ()
+  (match "{")
+  (let ((definitions '()))
+    (loop
+      (match "export")
+      (match "const")
+      (let ((var (=name)))
+        (when (maybe ":") (=name))
+        (match "=")
+        (let ((value (=value)))
+          (match ";")
+          (push (list (intern var) value) definitions)
+          (when (maybe "}")
+            (return)))))
+    (nreverse definitions)))
 
 (defun =interface ()
   (maybe "export")
@@ -135,6 +180,10 @@ exec ros -Q -- $0 "$@"
         (t
          (ts-to-lisp-type name))))))
 
+(defun =value ()
+  (prog1 (princ-to-string (lookahead))
+    (next)))
+
 (defun ts-to-lisp-type (name)
   (cond
     ((equal name "boolean") 'boolean)
@@ -170,7 +219,7 @@ exec ros -Q -- $0 "$@"
 
 (defun scan-ahead (text &optional (start 0))
   (multiple-value-bind (start end start-groups end-groups)
-      (ppcre:scan "^\\s*([a-zA-Z0-9_]+|\\?|/\\*|.)" text :start start)
+      (ppcre:scan "^\\s*([a-zA-Z0-9_]+|[-+]?[0-9]+(:?\\.[0-9]+)|\\?|/\\*|.)" text :start start)
     (when start
       (let ((str (subseq text (aref start-groups 0) (aref end-groups 0))))
         (values str end)))))
