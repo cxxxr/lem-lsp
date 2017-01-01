@@ -1,17 +1,46 @@
-(cl:defpackage #:ts2cl
-  (:use #:cl))
-(in-package #:ts2cl)
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#| <Put a one-line description here>
+exec ros -Q -- $0 "$@"
+|#
+(progn ;;init forms
+  (ros:ensure-asdf)
+  #+quicklisp (ql:quickload '(:alexandria
+                              :trivial-types
+                              :cl-ppcre)
+                            :silent t)
+  )
+
+(defpackage :ros.script.ts2cl.3692253918
+  (:use :cl))
+(in-package :ros.script.ts2cl.3692253918)
 
 (defvar *tokens*)
 
-(defun ts2cl (file)
-  (let ((text (uiop:read-file-string file)))
-    (parse text)))
+(declaim (ftype function
+                parse
+                lookahead
+                next
+                maybe
+                match
+                =interface
+                =interface-extends
+                =var-type-list
+                =var-type
+                =typespec
+                =name
+                =type
+                ts-to-lisp-type
+                scan-text
+                scan-ahead))
 
 (defun parse (text)
   (let ((*tokens* (scan-text text)))
     (catch 'fail
-      (=interface))))
+      (loop
+        (pprint (=interface))
+        (unless *tokens*
+          (return))))))
 
 (defun lookahead ()
   (first *tokens*))
@@ -145,3 +174,14 @@
     (when start
       (let ((str (subseq text (aref start-groups 0) (aref end-groups 0))))
         (values str end)))))
+
+(defun main (&rest argv)
+  (declare (ignorable argv))
+  (parse (with-output-to-string (output)
+           (loop :for line := (read-line nil nil)
+                 :while line
+                 :do (princ line output))))
+  (fresh-line))
+
+
+;;; vim: set ft=lisp lisp:
