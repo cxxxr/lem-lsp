@@ -10,7 +10,7 @@
 
 (defun parse (text)
   (let ((*tokens* (scan-text text)))
-    (catch 'back
+    (catch 'fail
       (=interface))))
 
 (defun lookahead ()
@@ -28,7 +28,9 @@
 (defun match (name)
   (if (equal name (lookahead))
       (next)
-      (throw 'back t)))
+      (throw 'fail (list *tokens*
+                         (with-output-to-string (stream)
+                           (uiop:print-backtrace :stream stream))))))
 
 (defun =interface ()
   (maybe "export")
@@ -60,23 +62,21 @@
              :collect (=var-type))))
 
 (defun =var-type ()
-  (let (var optionalp)
-    (and (setf var (=name))
-         (progn (setf optionalp (maybe "?")) t)
-         (progn
-           (match ":")
-           (let (type)
-             (setf type (=typespec))
-             (let ((rest-types
-                    (loop :while (maybe "|")
-                          :collect (=typespec))))
-               (when rest-types
-                 (setf type `(or ,type ,@rest-types)))
-               (match ";")
-               (list (if optionalp
-                         (alexandria:symbolicate (string-upcase var) "?")
-                         (alexandria:symbolicate (string-upcase var)))
-                     type)))))))
+  (let ((var (=name)))
+    (when var
+      (let ((optionalp (maybe "?")))
+        (match ":")
+        (let ((type (=typespec)))
+          (let ((rest-types
+                 (loop :while (maybe "|")
+                       :collect (=typespec))))
+            (when rest-types
+              (setf type `(or ,type ,@rest-types)))
+            (maybe ";")
+            (list (if optionalp
+                      (alexandria:symbolicate (string-upcase var) "?")
+                      (alexandria:symbolicate (string-upcase var)))
+                  type)))))))
 
 (defun =typespec ()
   (let ((type (=type)))
