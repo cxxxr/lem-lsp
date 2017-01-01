@@ -1,5 +1,5 @@
 (defpackage #:lem-lsp
-  (:use #:cl #:lem #:lsp-protocol))
+  (:use #:cl #:lem))
 (in-package #:lem-lsp)
 
 (defvar *workspaces* nil)
@@ -51,6 +51,7 @@
 
 (defvar *id-counter* 0)
 (defun send-request (client request)
+  #+(or)
   (lem::pdebug (list :request
                      (request-method request)
                      (with-output-to-string (out)
@@ -71,6 +72,7 @@
           (return (jsonrpc:response-result response)))))))
 
 (defun send-notification (client request)
+  #+(or)
   (lem::pdebug (list :notify
                      (request-method request)
                      (with-output-to-string (out)
