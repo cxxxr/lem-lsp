@@ -1,5 +1,5 @@
 (asdf:defsystem lsp-client
-  :depends-on (#:closer-mop)
+  :depends-on (:trivial-types)
   :components ((:module "lsp-client"
                 :serial t
                 :components ((:file "protocol")))))
