@@ -182,7 +182,7 @@ exec ros -Q -- $0 "$@"
          (ts-to-lisp-type name))))))
 
 (defun =value ()
-  (prog1 (princ-to-string (lookahead))
+  (prog1 (read-from-string (lookahead))
     (next)))
 
 (defun ts-to-lisp-type (name)

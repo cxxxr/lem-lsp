@@ -176,29 +176,38 @@
 
 (define-interface |InitializeResult| nil (capabilities |ServerCapabilities|))
 
-(progn (defparameter |unknownProtocolVersion| "1"))
+(progn (defparameter |unknownProtocolVersion| 1))
 
 (define-interface |InitializeError| nil (retry boolean))
 
 (progn
- (defparameter |None| "0")
- (defparameter |Full| "1")
- (defparameter |Incremental| "2"))
+ (defparameter |None| 0)
+ (defparameter |Full| 1)
+ (defparameter |Incremental| 2))
+
 (define-interface |CompletionOptions| nil (resolveprovider? boolean)
  (triggercharacters? (trivial-types:proper-list string)))
+
 (define-interface |SignatureHelpOptions| nil
  (triggercharacters? (trivial-types:proper-list string)))
+
 (define-interface |CodeLensOptions| nil (resolveprovider? boolean))
+
 (define-interface |DocumentOnTypeFormattingOptions| nil
  (firsttriggercharacter string)
  (moretriggercharacter? (trivial-types:proper-list string)))
+
 (define-interface |DocumentLinkOptions| nil (resolveprovider? boolean))
+
 (define-interface |ExecuteCommandOptions| nil
  (commands (trivial-types:proper-list string)))
+
 (define-interface |SaveOptions| nil (includetext? boolean))
+
 (define-interface |TextDocumentSyncOptions| nil (openclose? boolean)
  (change? integer) (willsave? boolean) (willsavewaituntil? boolean)
  (save? |SaveOptions|))
+
 (define-interface |ServerCapabilities| nil
  (textdocumentsync? (or |TextDocumentSyncOptions| integer))
  (hoverprovider? boolean) (completionprovider? |CompletionOptions|)
@@ -215,10 +224,10 @@
 (define-interface |ShowMessageParams| nil (type integer) (message string))
 
 (progn
- (defparameter |Error| "1")
- (defparameter |Warning| "2")
- (defparameter |Info| "3")
- (defparameter |Log| "4"))
+ (defparameter |Error| 1)
+ (defparameter |Warning| 2)
+ (defparameter |Info| 3)
+ (defparameter |Log| 4))
 
 (define-interface |ShowMessageRequestParams| nil (type integer)
  (message string) (actions? (trivial-types:proper-list |MessageActionItem|)))
@@ -229,17 +238,19 @@
 
 (define-interface |Registration| nil (id string) (method string)
  (registeroptions? t))
+
 (define-interface |RegistrationParams| nil
  (registrations (trivial-types:proper-list |Registration|)))
+
 (define-interface |TextDocumentRegistrationOptions| nil
  (documentselector (or |DocumentSelector| |null|)))
 
 (define-interface |Unregistration| nil (id string) (method string))
+
 (define-interface |UnregistrationParams| nil
  (unregisterations (trivial-types:proper-list |Unregistration|)))
 
 (define-interface |DidChangeConfigurationParams| nil (settings t))
-
 
 (define-interface |DidOpenTextDocumentParams| nil
  (textdocument |TextDocumentItem|))
@@ -247,6 +258,7 @@
 (define-interface |DidChangeTextDocumentParams| nil
  (textdocument |VersionedTextDocumentIdentifier|)
  (contentchanges (trivial-types:proper-list |TextDocumentContentChangeEvent|)))
+
 (define-interface |TextDocumentContentChangeEvent| nil (range? |Range|)
  (rangelength? integer) (text string))
 
@@ -255,10 +267,11 @@
 
 (define-interface |WillSaveTextDocumentParams| nil
  (textdocument |TextDocumentIdentifier|) (reason integer))
+
 (progn
- (defparameter |Manual| "1")
- (defparameter |AfterDelay| "2")
- (defparameter |FocusOut| "3"))
+ (defparameter |Manual| 1)
+ (defparameter |AfterDelay| 2)
+ (defparameter |FocusOut| 3))
 
 (define-interface |DidSaveTextDocumentParams| nil
  (textdocument |TextDocumentIdentifier|) (text? string))
@@ -273,40 +286,43 @@
  (changes (trivial-types:proper-list |FileEvent|)))
 
 (define-interface |FileEvent| nil (uri string) (type integer))
+
 (progn
- (defparameter |Created| "1")
- (defparameter |Changed| "2")
- (defparameter |Deleted| "3"))
+ (defparameter |Created| 1)
+ (defparameter |Changed| 2)
+ (defparameter |Deleted| 3))
 
 (define-interface |PublishDiagnosticsParams| nil (uri string)
  (diagnostics (trivial-types:proper-list |Diagnostic|)))
 
 (define-interface |CompletionList| nil (isincomplete boolean)
  (items (trivial-types:proper-list |CompletionItem|)))
+
 (define-interface |CompletionItem| nil (label string) (kind? integer)
  (detail? string) (documentation? string) (sorttext? string)
  (filtertext? string) (inserttext? string) (textedit? |TextEdit|)
  (additionaltextedits? (trivial-types:proper-list |TextEdit|))
  (command? |Command|) (data? t))
+
 (progn
- (defparameter |Text| "1")
- (defparameter |Method| "2")
- (defparameter |Function| "3")
- (defparameter |Constructor| "4")
- (defparameter |Field| "5")
- (defparameter |Variable| "6")
- (defparameter |Class| "7")
- (defparameter |Interface| "8")
- (defparameter |Module| "9")
- (defparameter |Property| "10")
- (defparameter |Unit| "11")
- (defparameter |Value| "12")
- (defparameter |Enum| "13")
- (defparameter |Keyword| "14")
- (defparameter |Snippet| "15")
- (defparameter |Color| "16")
- (defparameter |File| "17")
- (defparameter |Reference| "1"))
+ (defparameter |Text| 1)
+ (defparameter |Method| 2)
+ (defparameter |Function| 3)
+ (defparameter |Constructor| 4)
+ (defparameter |Field| 5)
+ (defparameter |Variable| 6)
+ (defparameter |Class| 7)
+ (defparameter |Interface| 8)
+ (defparameter |Module| 9)
+ (defparameter |Property| 10)
+ (defparameter |Unit| 11)
+ (defparameter |Value| 12)
+ (defparameter |Enum| 13)
+ (defparameter |Keyword| 14)
+ (defparameter |Snippet| 15)
+ (defparameter |Color| 16)
+ (defparameter |File| 17)
+ (defparameter |Reference| 1))
 
 (define-interface |CompletionRegistrationOptions|
  (|TextDocumentRegistrationOptions|)
@@ -316,54 +332,58 @@
 (define-interface |Hover| nil
  (contents (or |MarkedString| (trivial-types:proper-list |MarkedString|)))
  (range? |Range|))
+
 (define-interface |SignatureHelp| nil
  (signatures (trivial-types:proper-list |SignatureInformation|))
  (activesignature? integer) (activeparameter? integer))
+
 (define-interface |SignatureInformation| nil (label string)
  (documentation? string)
  (parameters? (trivial-types:proper-list |ParameterInformation|)))
+
 (define-interface |ParameterInformation| nil (label string)
  (documentation? string))
 
-
-(define-interface |SignatureHelpRegistrationOptions|
- (|TextDocumentRegistrationOptions|)
- (triggercharacters? (trivial-types:proper-list string)))
+(define-interface |SignatureHelpRegistrationOptions| (|TextDocumentRegistrationOptions|)
+  (triggercharacters? (trivial-types:proper-list string)))
 
 (define-interface |ReferenceParams| (|TextDocumentPositionParams|)
- (context |ReferenceContext|))
+  (context |ReferenceContext|))
+
 (define-interface |ReferenceContext| nil (includedeclaration boolean))
 
 (define-interface |DocumentHighlight| nil (range |Range|) (kind? integer))
+
 (progn
- (defparameter |Text| "1")
- (defparameter |Read| "2")
- (defparameter |Write| "3"))
+ (defparameter |Text| 1)
+ (defparameter |Read| 2)
+ (defparameter |Write| 3))
 
 (define-interface |DocumentSymbolParams| nil
  (textdocument |TextDocumentIdentifier|))
 
 (define-interface |SymbolInformation| nil (name string) (kind integer)
  (location |Location|) (containername? string))
+
 (progn
- (defparameter |File| "1")
- (defparameter |Module| "2")
- (defparameter |Namespace| "3")
- (defparameter |Package| "4")
- (defparameter |Class| "5")
- (defparameter |Method| "6")
- (defparameter |Property| "7")
- (defparameter |Field| "8")
- (defparameter |Constructor| "9")
- (defparameter |Enum| "10")
- (defparameter |Interface| "11")
- (defparameter |Function| "12")
- (defparameter |Variable| "13")
- (defparameter |Constant| "14")
- (defparameter |String| "15")
- (defparameter |Number| "16")
- (defparameter |Boolean| "17")
- (defparameter |Array| "18"))
+ (defparameter |File| 1)
+ (defparameter |Module| 2)
+ (defparameter |Namespace| 3)
+ (defparameter |Package| 4)
+ (defparameter |Class| 5)
+ (defparameter |Method| 6)
+ (defparameter |Property| 7)
+ (defparameter |Field| 8)
+ (defparameter |Constructor| 9)
+ (defparameter |Enum| 10)
+ (defparameter |Interface| 11)
+ (defparameter |Function| 12)
+ (defparameter |Variable| 13)
+ (defparameter |Constant| 14)
+ (defparameter |String| 15)
+ (defparameter |Number| 16)
+ (defparameter |Boolean| 17)
+ (defparameter |Array| 18))
 
 (define-interface |WorkspaceSymbolParams| nil (query string))
 
@@ -396,14 +416,18 @@
 (define-interface |DocumentRangeFormattingParams| nil
  (textdocument |TextDocumentIdentifier|) (range |Range|)
  (options |FormattingOptions|))
+
 (define-interface |DocumentOnTypeFormattingParams| nil
  (textdocument |TextDocumentIdentifier|) (position |Position|) (ch string)
  (options |FormattingOptions|))
+
 (define-interface |DocumentOnTypeFormattingRegistrationOptions|
  (|TextDocumentRegistrationOptions|) (firsttriggercharacter string)
  (moretriggercharacter? (trivial-types:proper-list string)))
+
 (define-interface |RenameParams| nil (textdocument |TextDocumentIdentifier|)
  (position |Position|) (newname string))
+
 (define-interface |ExecuteCommandParams| nil (command string)
  (arguments? (trivial-types:proper-list t)))
 
