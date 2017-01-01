@@ -33,27 +33,56 @@
 (defun =interface ()
   (maybe "export")
   (match "interface")
-  (let ((name (=name)))
-    (list :interface name (=key-value-list))))
+  (let ((name (=name))
+        (extends))
+    (when (maybe "extends")
+      (setf extends (=interface-extends)))
+    (let ((definitions (=var-type-list)))
+      `(define-interface ,(alexandria:symbolicate name) (,@extends)
+         ,@(mapcar (lambda (definition)
+                     (destructuring-bind (var type)
+                         definition
+                       `(,var ,type)))
+                   definitions)))))
 
-(defun =key-value-list ()
+(defun =interface-extends ()
+  (let ((extends '()))
+    (loop
+      (let ((name (=name)))
+        (push name extends)
+        (unless (maybe ",")
+          (return))))
+    (mapcar #'alexandria:symbolicate (nreverse extends))))
+
+(defun =var-type-list ()
   (and (maybe "{")
        (loop :until (maybe "}")
-             :collect (=key-value))))
+             :collect (=var-type))))
 
-(defun =key-value ()
-  (let (name optionalp value)
-    (and (setf name (=name))
+(defun =var-type ()
+  (let (var optionalp)
+    (and (setf var (=name))
          (progn (setf optionalp (maybe "?")) t)
          (progn
            (match ":")
-           (setf value (=value))
-           (match ";")
-           (list name value optionalp)))))
+           (let (type)
+             (setf type (=typespec))
+             (let ((rest-types
+                    (loop :while (maybe "|")
+                          :collect (=typespec))))
+               (when rest-types
+                 (setf type `(or ,type ,@rest-types)))
+               (match ";")
+               (list (if optionalp
+                         (alexandria:symbolicate (string-upcase var) "?")
+                         (alexandria:symbolicate (string-upcase var)))
+                     type)))))))
 
-(defun =value ()
-  (or (=name-or-array)
-      (=key-value-list)))
+(defun =typespec ()
+  (let ((type (=type)))
+    (if (null type)
+        `(json ,@(=var-type-list))
+        type)))
 
 (defun =name ()
   (let ((str (lookahead)))
@@ -66,15 +95,24 @@
            (next)
            str))))
 
-(defun =name-or-array ()
+(defun =type ()
   (let ((name (=name)))
     (when name
       (cond
         ((maybe "[")
          (match "]")
-         (list :array name))
+         `(trivial-types:proper-list
+           ,(ts-to-lisp-type name)))
         (t
-         name)))))
+         (ts-to-lisp-type name))))))
+
+(defun ts-to-lisp-type (name)
+  (cond
+    ((equal name "boolean") 'boolean)
+    ((equal name "number") 'integer)
+    ((equal name "string") 'string)
+    ((equal name "any") 'T)
+    (t (intern name))))
 
 (defun scan-text (text)
   (let ((pos 0)
