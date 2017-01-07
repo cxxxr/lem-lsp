@@ -5,10 +5,6 @@
 (defvar *workspaces* nil)
 (defvar *client*)
 
-(defstruct client
-  language-id
-  jsonrpc-client)
-
 (defstruct workspace
   language-id
   file-versions
@@ -16,13 +12,18 @@
   client
   server-capabilities)
 
+(defun client-language-id (client)
+  (getf (jsonrpc::transport-data client) :language-id))
+
 (defun start-lsp ()
   (setf *client*
-        (make-client :jsonrpc-client (jsonrpc:client-connect :host "127.0.0.1" :port 4389)
-                     :language-id "go"))
+        (jsonrpc:client-connect :host "127.0.0.1" :port 4389))
+  (setf (jsonrpc::transport-data *client*)
+        (list :language-id "go"))
   (add-hook 'find-file-hook 'text-document-did-open)
   (add-hook 'after-save-hook 'text-document-did-save)
-  (add-hook 'kill-buffer-hook 'text-document-did-close))
+  (add-hook 'kill-buffer-hook 'text-document-did-close)
+  t)
 
 (defun find-workspace (buffer)
   (dolist (workspace *workspaces*)
@@ -37,7 +38,8 @@
 (defun (setf buffer-workspace) (workspace &optional (buffer (current-buffer)))
   (setf (get-bvar 'workspace :buffer buffer) workspace))
 
-(defmethod get-root ((client client))
+(defun get-root (client)
+  (declare (ignore client))
   (namestring (uiop:pathname-directory-pathname
                (buffer-filename
                 (current-buffer)))))
@@ -56,7 +58,7 @@
                      (request-method request)
                      (with-output-to-string (out)
                        (yason:encode (request-params request) out))))
-  (let ((transport (client-jsonrpc-client client))
+  (let ((transport client)
         (method (request-method request))
         (params (request-params request))
         (id (incf *id-counter*)))
@@ -77,7 +79,7 @@
                      (request-method request)
                      (with-output-to-string (out)
                        (yason:encode (request-params request) out))))
-  (jsonrpc:notify (client-jsonrpc-client client)
+  (jsonrpc:notify client
                   (request-method request)
                   (request-params request)))
 
@@ -153,7 +155,7 @@
   (params "uri" (format nil "file://~A" (buffer-filename buffer))))
 
 (defun make-position (point)
-  (params "line" (1- (point-linum point))
+  (params "line" (1- (line-number-at-point point))
           "character" (point-charpos point)))
 
 (defun make-text-document-position-params (point)
