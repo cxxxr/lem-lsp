@@ -13,16 +13,16 @@
   server-capabilities)
 
 (defun client-language-id (client)
-  (getf (jsonrpc::transport-data client) :language-id))
+  (getf (jsonrpc:transport-data client) :language-id))
 
 (defun start-lsp ()
   (setf *client*
         (jsonrpc:client-connect :host "127.0.0.1" :port 4389))
-  (setf (jsonrpc::transport-data *client*)
+  (setf (jsonrpc:transport-data *client*)
         (list :language-id "go"))
-  (add-hook 'find-file-hook 'text-document-did-open)
-  (add-hook 'after-save-hook 'text-document-did-save)
-  (add-hook 'kill-buffer-hook 'text-document-did-close)
+  (add-hook *find-file-hook* 'text-document-did-open)
+  (add-hook *after-save-hook* 'text-document-did-save)
+  (add-hook *kill-buffer-hook* 'text-document-did-close)
   t)
 
 (defun find-workspace (buffer)
@@ -38,11 +38,11 @@
 (defun (setf buffer-workspace) (workspace &optional (buffer (current-buffer)))
   (setf (get-bvar 'workspace :buffer buffer) workspace))
 
-(defun get-root (client)
+(defun get-root (client buffer)
   (declare (ignore client))
   (namestring (uiop:pathname-directory-pathname
                (buffer-filename
-                (current-buffer)))))
+                buffer))))
 
 (defun params (&rest plist)
   (alexandria:plist-hash-table plist :test 'equal))
@@ -83,8 +83,8 @@
                   (request-method request)
                   (request-params request)))
 
-(defun initialize (client)
-  (let* ((root (get-root client))
+(defun initialize (client buffer)
+  (let* ((root (get-root client buffer))
          (workspace (make-workspace :language-id (client-language-id client)
                                     :file-versions (make-hash-table :test 'equal)
                                     :root root
@@ -117,7 +117,7 @@
     (let ((workspace (find-workspace buffer)))
       (unless workspace
         (assert (not (null *client*)))
-        (initialize *client*)
+        (initialize *client* buffer)
         (setf workspace (find-workspace buffer))
         (assert (workspace-p workspace)))
       (setf (buffer-workspace buffer) workspace)
@@ -170,6 +170,7 @@
                                 (make-request "textDocument/definition"
                                               (make-text-document-position-params (current-point)))))
             (elements '()))
+        (message "~A" defs)
         (dolist (def defs)
           (let* ((uri (gethash "uri" def))
                  (range (gethash "range" def))
